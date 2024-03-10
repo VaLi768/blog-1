@@ -1,9 +1,32 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
-from .models import Post
-
+from .models import Post, Comment
+from django.views.generic import ListView
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from .forms import CommentForm
+from django.views.decorators.http import require_POST
+
+@require_POST
+def post_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    commnet = None
+    form = CommentForm(data=request.POST)
+    if form.is_valid():
+        commnet = form.save(commit=False)
+        commnet.post = post
+        commnet.save()
+    return render(request, 'blog/post/comment.html', {'post': post,
+                                                      'form': form,
+                                                      'comment': commnet})
+
+
+
+class PostListView(ListView):
+    queryset = Post.objects.filter(status=Post.Status.PUBLISHED).all()
+    context_object_name = 'posts'
+    paginate_by = 2
+    template_name = 'blog/post/list.html'
 
 # Create your views here.
 def index(request):
@@ -33,4 +56,9 @@ def post_detail(request, year, month, day, post):
                              publish__month = month,
                              publish__day = day,
                              slug= post,)
-    return render(request, 'blog/post/detail.html', {'post': post})\
+    comments = post.comments.filter(active=True)
+    form = CommentForm()
+
+    return render(request, 'blog/post/detail.html', {'post': post,
+                                                     'comments': comments,
+                                                     'form' : form})
