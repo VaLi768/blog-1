@@ -16,13 +16,14 @@ class Post(models.Model):
         PUBLISHED = 'PB', 'Publishes'
     title = models.CharField(max_length=250)
     slug = models.SlugField(max_length=250, unique_for_date='publish')
-    image = models.ImageField(upload_to="post/", blank=True)
+    image = models.ImageField(upload_to='blog/%Y/%m/%d/', blank=True)
     body = models.TextField()
     publish = models.DateTimeField(default=timezone.now)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=Status.choices, default=Status.DRAFT)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_post')
+    tags = models.ManyToManyField('Tag', blank = True, related_name = 'posts')
     objects = models.Manager()
     published = PublishmentManager()
     class Meta:
@@ -53,3 +54,8 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'Comment {self.name} on {self.post}'
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
+    def __str__(self):
+        return self.name
